@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="description" content="Entrenamiento de amplitud de dígitos y memoria de trabajo.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>Memoria Numérica</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#151f31;--panel2:#1d2a40;--text:#f3f6fb;--muted:#a9b6c9;--accent:#79a9ff;--good:#42c98b;--bad:#ff7272;--line:#2a3a53}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#0b1220,#101c30);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+header{padding:22px 18px 12px;max-width:760px;margin:auto}h1{font-size:1.45rem;margin:0}header p{color:var(--muted);margin:5px 0 0;font-size:.9rem}
+main{max-width:760px;margin:auto;padding:10px 14px 40px}.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 14px}
+button,select,input{font:inherit}button{border:0;border-radius:12px;padding:12px 14px;background:var(--panel2);color:var(--text);font-weight:650;cursor:pointer}
+button:disabled{opacity:.4;cursor:not-allowed}.tab{padding:11px 6px;font-size:.88rem}.tab.active,.primary{background:var(--accent);color:#081426}
+.card{background:rgba(21,31,49,.96);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 10px 30px #0002}
+h2{font-size:1.05rem;margin:0 0 12px}.muted{color:var(--muted);font-size:.9rem}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;color:var(--muted);font-size:.83rem;margin-bottom:5px}select,input[type=number]{width:100%;background:#0e1828;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px}
+.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.row>*{flex:1}.check{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:.9rem;margin:10px 0}
+.big-number{font-size:clamp(2.8rem,12vw,5rem);letter-spacing:.18em;font-weight:750;text-align:center;padding:34px 4px;font-variant-numeric:tabular-nums}
+.center{text-align:center}.hidden{display:none!important}.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.keypad button{font-size:1.35rem;padding:15px}.answer{background:#0e1828;border:1px solid var(--line);border-radius:12px;padding:13px;min-height:52px;text-align:center;font-size:1.35rem;letter-spacing:.16em;overflow-wrap:anywhere}
+.actions{display:flex;gap:8px;margin-top:12px}.actions button{flex:1}.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#0e1828;border-radius:12px;padding:12px;text-align:center}.stat strong{display:block;font-size:1.35rem}.stat span{font-size:.75rem;color:var(--muted)}
+.badge{display:inline-block;border-radius:999px;background:#253753;padding:5px 9px;color:#c9dcff;font-size:.78rem}
+.good{color:var(--good)}.bad{color:var(--bad)}.history{width:100%;border-collapse:collapse;font-size:.83rem}.history td,.history th{padding:9px 5px;border-bottom:1px solid var(--line);text-align:left}
+footer{text-align:center;color:var(--muted);font-size:.75rem;padding:20px}
+@media(min-width:620px){.card{padding:20px}.tabs{max-width:500px}.big-number{padding:48px}}
+</style>
+</head>
+<body>
+<header><h1>Memoria Numérica</h1><p>Entrenamiento de amplitud de dígitos y memoria de trabajo</p></header>
+<main>
+<nav class="tabs">
+<button class="tab active" data-tab="train">Entrenamiento</button>
+<button class="tab" data-tab="test">Evaluación</button>
+<button class="tab" data-tab="stats">Estadísticas</button>
+</nav>
+
+<section id="train" class="pane">
+<div class="card">
+<h2>Configurar ejercicio</h2>
+<div class="grid">
+<div><label for="mode">Modalidad</label><select id="mode"><option value="forward">Orden directo</option><option value="backward">Orden inverso</option><option value="ascending">Orden creciente</option></select></div>
+<div><label for="presentation">Presentación</label><select id="presentation"><option value="serial">Un dígito a la vez</option><option value="whole">Secuencia completa</option></select></div>
+<div><label for="digits">Cantidad de dígitos</label><input id="digits" type="number" min="2" max="20" value="5"></div>
+<div><label for="exposure">Exposición por dígito (ms)</label><input id="exposure" type="number" min="250" max="10000" step="250" value="1000"></div>
+<div><label for="gap">Intervalo entre dígitos (ms)</label><input id="gap" type="number" min="0" max="5000" step="100" value="300"></div>
+<div><label for="wholeTime">Tiempo secuencia completa (s)</label><input id="wholeTime" type="number" min="1" max="30" value="5"></div>
+</div>
+<div style="margin-top:10px"><label for="channel">Canal de presentación</label><select id="channel"><option value="visual">Visual</option><option value="audio">Auditivo (voz del dispositivo)</option><option value="both">Visual y auditivo</option></select></div>
+<label class="check"><input id="auto" type="checkbox"> Ajustar dificultad automáticamente</label>
+<button class="primary" id="startTrain" style="width:100%;margin-top:8px">Comenzar entrenamiento</button>
+</div>
+</section>
+
+<section id="test" class="pane hidden">
+<div class="card">
+<h2>Evaluación estructurada de práctica</h2>
+<p class="muted">Secuencias de longitud creciente, dos intentos por nivel y finalización cuando ambos intentos de un nivel son incorrectos. No reproduce normas, baremos ni administración oficial del WAIS.</p>
+<div class="grid">
+<div><label for="testStart">Longitud inicial</label><input id="testStart" type="number" min="2" max="12" value="2"></div>
+<div><label for="testMode">Modalidad</label><select id="testMode"><option value="forward">Orden directo</option><option value="backward">Orden inverso</option><option value="ascending">Orden creciente</option></select></div>
+<div><label for="testPresentation">Presentación</label><select id="testPresentation"><option value="serial">Auditiva/visual, un dígito a la vez</option><option value="whole">Secuencia completa visual</option></select></div>
+<div><label for="testExposure">Ritmo (ms por dígito)</label><input id="testExposure" type="number" min="500" max="3000" step="100" value="1000"></div>
+</div>
+<div style="margin-top:10px"><label for="testChannel">Canal de presentación</label><select id="testChannel"><option value="audio">Auditivo (voz del dispositivo)</option><option value="visual">Visual</option><option value="both">Visual y auditivo</option></select></div>
+<button class="primary" id="startTest" style="width:100%">Iniciar evaluación de práctica</button>
+</div>
+</section>
+
+<section id="exercise" class="card hidden">
+<div class="row"><span class="badge" id="phaseLabel">Entrenamiento</span><span class="muted center" id="progressLabel">Intento 1</span></div>
+<div id="instruction" class="center muted" style="margin-top:14px">Memoriza la secuencia</div>
+<div id="stimulus" class="big-number" aria-live="polite">—</div>
+<div id="answerArea" class="hidden">
+<div class="muted center">Introduce la respuesta</div>
+<div class="answer" id="answerDisplay"> </div>
+<div class="keypad" id="keypad">
+<button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button>
+<button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button>
+<button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button>
+<button data-key="clear">Borrar</button><button data-key="0">0</button><button data-key="back">⌫</button>
+</div>
+<div class="actions"><button id="submitAnswer" class="primary">Comprobar</button><button id="cancelExercise">Salir</button></div>
+</div>
+<div id="feedback" class="center" style="margin-top:12px"></div>
+<button id="nextExercise" class="primary hidden" style="width:100%;margin-top:12px">Continuar</button>
+</section>
+
+<section id="stats" class="pane hidden">
+<div class="card"><h2>Resumen acumulado</h2><div class="statgrid">
+<div class="stat"><strong id="totalSessions">0</strong><span>Sesiones</span></div>
+<div class="stat"><strong id="overallAccuracy">—</strong><span>Aciertos</span></div>
+<div class="stat"><strong id="bestSpan">—</strong><span>Mejor amplitud</span></div>
+</div></div>
+<div class="card"><h2>Historial reciente</h2><div id="historyWrap" class="muted">Todavía no hay sesiones registradas.</div><button id="clearHistory" style="margin-top:12px">Borrar historial</button></div>
+</section>
+<footer>Herramienta de práctica cognitiva. No sustituye una evaluación neuropsicológica ni una prueba WAIS oficial.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+let state={kind:"train",mode:"forward",presentation:"serial",digits:5,exposure:1000,gap:300,wholeTime:5,audio:false,channel:"visual",sequence:"",answer:"",trial:1,level:2,correct:0,wrong:0,levelWrong:0,testStart:2,testScore:0,maxCorrect:0,sessionStart:0,awaiting:false,auto:false};
+const getHistory=()=>{try{return JSON.parse(localStorage.getItem("mn_history")||"[]")}catch{return[]}};
+function saveSession(item){let h=getHistory();h.unshift(item);localStorage.setItem("mn_history",JSON.stringify(h.slice(0,100)));renderStats()}
+function randomSequence(n){let s="";for(let i=0;i<n;i++)s+=Math.floor(Math.random()*10);return s}
+function speakDigit(d){if(!state.audio)return;try{speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(d);u.lang="es-ES";u.rate=1;speechSynthesis.speak(u)}catch(e){}}
+function showPane(name){document.querySelectorAll(".pane").forEach(x=>x.classList.toggle("hidden",x.id!==name));$("exercise").classList.add("hidden");document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===name))}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{showPane(b.dataset.tab);if(b.dataset.tab==="stats")renderStats()});
+function begin(kind){
+ state.kind=kind;state.correct=0;state.wrong=0;state.testScore=0;state.maxCorrect=0;state.levelWrong=0;state.trial=1;state.sessionStart=Date.now();state.awaiting=false;
+ if(kind==="train"){
+  state.mode=$("mode").value;state.presentation=$("presentation").value;state.digits=clamp($("digits").value,2,20);state.exposure=clamp($("exposure").value,250,10000);state.gap=clamp($("gap").value,0,5000);state.wholeTime=clamp($("wholeTime").value,1,30)*1000;state.channel=$("channel").value;state.audio=state.channel!=="visual";state.auto=$("auto").checked;state.level=state.digits;
+ }else{
+  state.mode=$("testMode").value;state.presentation=$("testPresentation").value;state.digits=clamp($("testStart").value,2,12);state.level=state.digits;state.exposure=clamp($("testExposure").value,500,3000);state.gap=250;state.wholeTime=5000;state.channel=$("testChannel").value;state.audio=state.channel!=="visual";
+ }
+ $("exercise").classList.remove("hidden");$("answerArea").classList.add("hidden");$("feedback").textContent="";$("nextExercise").classList.add("hidden");$("phaseLabel").textContent=kind==="train"?"Entrenamiento":"Evaluación de práctica";nextTrial();
+}
+function clamp(v,min,max){return Math.max(min,Math.min(max,Number(v)||min))}
+function nextTrial(){
+ state.sequence=randomSequence(state.level);state.answer="";state.awaiting=false;
+ $("answerDisplay").textContent=" ";$("answerArea").classList.add("hidden");$("nextExercise").classList.add("hidden");$("feedback").textContent="";
+ $("instruction").textContent=state.presentation==="serial"?"Memoriza los números en el orden presentado":"Memoriza la secuencia completa";
+ $("progressLabel").textContent=`Longitud ${state.level} · Intento ${state.trial}${state.kind==="test"?" de 2":""}`;
+ presentSequence();
+}
+function presentSequence(){
+ const stim=$("stimulus");stim.textContent="";let seq=state.sequence;
+ if(state.presentation==="whole"){
+  stim.textContent=state.channel==="audio"?"Escucha los números":seq;
+  if(state.audio){seq.split("").forEach((d,i)=>setTimeout(()=>speakDigit(d),i*state.exposure))}
+  setTimeout(()=>showAnswer(),state.kind==="test"?state.exposure*seq.length:state.wholeTime);
+ }else{
+  let i=0;const tick=()=>{if(i>=seq.length){stim.textContent="—";setTimeout(showAnswer,250);return}
+   stim.textContent=state.channel==="audio"?"Escucha":seq[i];speakDigit(seq[i]);i++;setTimeout(tick,state.exposure+state.gap)};
+  tick();
+ }
+}
+function showAnswer(){$("stimulus").textContent="";$("instruction").textContent="Escribe la respuesta";$("answerArea").classList.remove("hidden");state.awaiting=true}
+$("keypad").addEventListener("click",e=>{let k=e.target.dataset.key;if(!k||!state.awaiting)return;if(k==="clear")state.answer="";else if(k==="back")state.answer=state.answer.slice(0,-1);else if(state.answer.length<25)state.answer+=k;$("answerDisplay").textContent=state.answer||" "});
+$("submitAnswer").onclick=()=>{if(!state.awaiting||!state.answer)return;state.awaiting=false;let expected=state.sequence;if(state.mode==="backward")expected=expected.split("").reverse().join("");if(state.mode==="ascending")expected=expected.split("").sort().join("");
+ let ok=state.answer===expected;if(ok){state.correct++;state.testScore++;state.maxCorrect=Math.max(state.maxCorrect,state.level);$("feedback").innerHTML='<span class="good">Correcto</span>'}else{state.wrong++;state.levelWrong++;$("feedback").innerHTML='<span class="bad">Incorrecto</span> · Respuesta correcta: '+expected}
+ $("answerArea").classList.add("hidden");
+ if(state.kind==="test"){if(state.trial===1){state.trial=2;$("nextExercise").classList.remove("hidden");$("nextExercise").textContent="Segundo intento";}else if(state.levelWrong>=2){$("nextExercise").classList.remove("hidden");$("nextExercise").textContent="Finalizar evaluación";}else{state.level++;state.trial=1;state.levelWrong=0;$("nextExercise").classList.remove("hidden");$("nextExercise").textContent="Siguiente nivel"}}
+ else{$("nextExercise").classList.remove("hidden");$("nextExercise").textContent="Siguiente ejercicio"}
+};
+$("nextExercise").onclick=()=>{
+ if(state.kind==="test"&&state.trial===2&&state.levelWrong>=2){finishSession();return}
+ if(state.kind==="train"&&state.auto){if(state.correct>state.wrong&&state.level<20)state.level++;else if(state.wrong>state.correct&&state.level>2)state.level--}
+ nextTrial();
+};
+function finishSession(){
+ $("exercise").classList.add("hidden");
+ let total=state.correct+state.wrong,accuracy=total?Math.round(state.correct/total*100):0;
+ saveSession({date:new Date().toLocaleString("es-CL"),kind:state.kind,mode:state.mode,correct:state.correct,wrong:state.wrong,accuracy,best:state.maxCorrect||state.level,duration:Math.round((Date.now()-state.sessionStart)/1000)});
+ alert(`Sesión finalizada\nAciertos: ${state.correct}\nErrores: ${state.wrong}\nPrecisión: ${accuracy}%\nMayor longitud acertada: ${state.maxCorrect||"—"}`);
+ showPane("stats");
+}
+$("cancelExercise").onclick=()=>{if(confirm("¿Salir y guardar los resultados parciales?"))finishSession()};
+$("startTrain").onclick=()=>begin("train");$("startTest").onclick=()=>begin("test");
+function renderStats(){
+ let h=getHistory(),n=h.reduce((a,x)=>a+x.correct+x.wrong,0),c=h.reduce((a,x)=>a+x.correct,0),best=h.reduce((a,x)=>Math.max(a,x.best||0),0);
+ $("totalSessions").textContent=h.length;$("overallAccuracy").textContent=n?Math.round(c/n*100)+"%":"—";$("bestSpan").textContent=best||"—";
+ if(!h.length){$("historyWrap").textContent="Todavía no hay sesiones registradas.";return}
+ $("historyWrap").innerHTML='<table class="history"><thead><tr><th>Fecha</th><th>Modo</th><th>Aciertos</th><th>%</th><th>Máx.</th></tr></thead><tbody>'+h.slice(0,20).map(x=>`<tr><td>${x.date}</td><td>${x.kind==="test"?"Evaluación":"Práctica"} · ${x.mode==="forward"?"Directo":x.mode==="backward"?"Inverso":"Creciente"}</td><td>${x.correct}/${x.correct+x.wrong}</td><td>${x.accuracy}%</td><td>${x.best}</td></tr>`).join("")+'</tbody></table>';
+}
+$("clearHistory").onclick=()=>{if(confirm("¿Borrar todo el historial guardado en este dispositivo?")){localStorage.removeItem("mn_history");renderStats()}};
+if("serviceWorker" in navigator && location.protocol!=="file:"){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
+renderStats();
+</script>
+</body></html>
